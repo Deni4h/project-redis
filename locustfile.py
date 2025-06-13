@@ -2,6 +2,7 @@ from locust import User, task, between
 import redis
 import random
 import string
+import time
 
 # Helper untuk random string
 def random_string(length=10):
@@ -15,40 +16,47 @@ class RedisClient:
     def write(self):
         key = f"key:{random_string(5)}"
         value = random_string(20)
+        start_time = time.time()
         try:
-            with self.environment.events.request.fire(
-                request_type="redis",
-                name="write",
-                response_time=0,  # default, nanti dihitung manual
-                response_length=0,
-                exception=None
-            ):
-                self.r.set(key, value)
-        except Exception as e:
+            self.r.set(key, value)
+            total_time = (time.time() - start_time) * 1000  # dalam ms
             self.environment.events.request.fire(
                 request_type="redis",
                 name="write",
-                response_time=0,
+                response_time=total_time,
+                response_length=len(value),
+                exception=None
+            )
+        except Exception as e:
+            total_time = (time.time() - start_time) * 1000
+            self.environment.events.request.fire(
+                request_type="redis",
+                name="write",
+                response_time=total_time,
                 response_length=0,
                 exception=e
             )
 
     def read(self):
         key = f"key:{random_string(5)}"
+        start_time = time.time()
         try:
-            with self.environment.events.request.fire(
-                request_type="redis",
-                name="read",
-                response_time=0,
-                response_length=0,
-                exception=None
-            ):
-                self.r.get(key)
-        except Exception as e:
+            value = self.r.get(key)
+            response_length = len(value) if value else 0
+            total_time = (time.time() - start_time) * 1000
             self.environment.events.request.fire(
                 request_type="redis",
                 name="read",
-                response_time=0,
+                response_time=total_time,
+                response_length=response_length,
+                exception=None
+            )
+        except Exception as e:
+            total_time = (time.time() - start_time) * 1000
+            self.environment.events.request.fire(
+                request_type="redis",
+                name="read",
+                response_time=total_time,
                 response_length=0,
                 exception=e
             )
