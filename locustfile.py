@@ -7,16 +7,14 @@ import os
 import hvac
 from dotenv import load_dotenv
 
-# Helper untuk random string
 def random_string(length=10):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
-# Loading environment
+
 load_dotenv()
 vault_url = os.getenv("VAULT_ADDRESS")
 vault_token = os.getenv("VAULT_TOKEN")
 
-# Menghubungkan ke Vault dan ambil password Redis
 vault = hvac.Client(url=vault_url, token=vault_token)
 secret = vault.secrets.kv.v1.read_secret(path='redis')
 redis_pass = secret['data']['password_redis']
